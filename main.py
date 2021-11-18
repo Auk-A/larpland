@@ -5,14 +5,16 @@ import db
 pygame.init()
 pygame.font.init()
 db.start_connection()
+w = 1920
+h = 1080
+display = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
 
-display = pygame.display.set_mode((800, 600), pygame.FULLSCREEN)
 clock = pygame.time.Clock()
 
 
 class Text:
     def __init__(self, font):
-        self.text = ""
+        self.text = "test"
         self.font = font
 
     def change_font(self, font):
@@ -22,8 +24,12 @@ class Text:
         self.text = new_text
 
     def render(self, location):
-        text_surface = pygame.font.SysFont(self.font, 30).render(self.text, True, (255, 255, 255))
-        display.blit(text_surface, dest=location)
+        text_surface = pygame.font.SysFont(self.font, 80).render(self.text, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=(w / 2, h / 2))
+        display.blit(text_surface, dest=text_rect)
+
+    def get_w(self):
+        return pygame.font.SysFont(self.font, 80).render(self.text, True, (255, 255, 255)).get_width()
 
 
 class Player:
@@ -48,7 +54,7 @@ while True:
         if event.type == pygame.QUIT:
             sys.exit()
 
-    mainText.render((100, 100))
+    mainText.render(())
     # player.main(display)
 
     clock.tick(60)
