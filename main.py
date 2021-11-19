@@ -23,10 +23,14 @@ class Text:
     def change_text(self, new_text):
         self.text = new_text
 
-    def render(self, location):
+    def render(self, location=None, h_offset=0, v_offset=0):
         text_surface = pygame.font.SysFont(self.font, 80).render(self.text, True, (255, 255, 255))
-        text_rect = text_surface.get_rect(center=(w / 2, h / 2))
-        display.blit(text_surface, dest=text_rect)
+        text_rect = text_surface.get_rect(center=((w / 2) + h_offset, (h / 2) + v_offset))
+
+        if location is None:
+            display.blit(text_surface, dest=text_rect)
+        else:
+            display.blit(text_surface, dest=location)
 
     def get_w(self):
         return pygame.font.SysFont(self.font, 80).render(self.text, True, (255, 255, 255)).get_width()
@@ -46,7 +50,6 @@ class Player:
 # player = Player(400, 300, 32, 32)
 mainText = Text("Calibri")
 
-
 while True:
     display.fill((0, 0, 0))
 
@@ -54,7 +57,7 @@ while True:
         if event.type == pygame.QUIT:
             sys.exit()
 
-    mainText.render(())
+    mainText.render(v_offset=200)
     # player.main(display)
 
     clock.tick(60)
