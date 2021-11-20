@@ -4,7 +4,8 @@ import db
 
 pygame.init()
 pygame.font.init()
-db.start_connection()
+db.initialize_db()
+
 w = 1920
 h = 1080
 display = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
@@ -44,28 +45,36 @@ class Text:
             sys.exit()
 
 
-class Weapon:
+# Items and weapons
+class Item:
     def __init__(self, name):
         self.name = name
+        self.coin_value = None
+
+
+class Weapon(Item):
+    def __init__(self, name, speed):
+        super().__init__(name)
+        self.speed = speed
         self.damage = 10
 
 
 class Bow(Weapon):
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, speed):
+        super().__init__(name, speed)
         self.range = 50
 
 
 class Sword(Weapon):
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, speed):
+        super().__init__(name, speed)
         self.range = 10
 
 
+# Player
 class Player:
     def __init__(self):
-        self.weapon = Sword("Stalen Zwaard")
-        self.shield = ""
+        self.items = []
 
 
 class Menu:
@@ -112,6 +121,8 @@ mainMenu = Menu(-90, 60,
                 Text(default_font, "Uitgang", "exit"))
 
 tabIndex = 0
+
+db.get_random_weapon()
 
 menu = True
 while True:
