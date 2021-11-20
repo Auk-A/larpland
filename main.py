@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pygame
 import sys
 import db
@@ -41,17 +43,27 @@ class Text:
         return pygame.font.SysFont(self.font, 120).render(self.text, True, (255, 255, 255)).get_width()
 
     def do_action(self):
-        if self.functionality == "exit":
+        if self.functionality == "exit_main":
             sys.exit()
+        elif self.functionality == "enter_main":
+            mainMenu.visibility = False
+        elif self.functionality == "settings_main":
+            mainMenu.visibility = False
+            settingsMenu.visibility = True
+        elif self.functionality == "return":
+            mainMenu.visibility = True
+            settingsMenu.visibility = False
 
 
 # Items and weapons
+@dataclass
 class Item:
     def __init__(self, name):
         self.name = name
         self.coin_value = None
 
 
+@dataclass
 class Weapon(Item):
     def __init__(self, name, speed):
         super().__init__(name)
@@ -59,12 +71,14 @@ class Weapon(Item):
         self.damage = 10
 
 
+@dataclass
 class Bow(Weapon):
     def __init__(self, name, speed):
         super().__init__(name, speed)
         self.range = 50
 
 
+@dataclass
 class Sword(Weapon):
     def __init__(self, name, speed):
         super().__init__(name, speed)
@@ -78,7 +92,7 @@ class Player:
 
 
 class Menu:
-    def __init__(self, vertical_offset, font_size, text_header, *menu_items):
+    def __init__(self, visibility, vertical_offset, font_size, text_header, *menu_items):
         self.text_header = text_header
         self.vertical_offset = vertical_offset
         self.font_size = font_size
@@ -86,6 +100,7 @@ class Menu:
         for menu_item in menu_items:
             self.list_menu_items.append(menu_item)
         self.current_round = - 1
+        self.visibility = visibility
 
     def render(self):
         v_offset = self.vertical_offset
@@ -113,23 +128,29 @@ class Menu:
         self.list_menu_items[self.current_round].color = "red"
 
 
-# player = Player(400, 300, 32, 32)
-mainMenu = Menu(-90, 60,
+mainMenu = Menu(True, -90, 60,
                 Text(default_font, "Larpland"),
-                Text(default_font, "Start"),
-                Text(default_font, "Instellingen", "settings"),
-                Text(default_font, "Uitgang", "exit"))
+                Text(default_font, "Enter", "enter_main"),
+                Text(default_font, "Settings", "settings_main"),
+                Text(default_font, "Exit", "exit_main"))
 
-tabIndex = 0
+settingsMenu = Menu(False, -90, 60,
+                    Text(default_font, "Settings"),
+                    Text(default_font, "Menu style"),
+                    Text(default_font, "Other"),
+                    Text(default_font, "Colors"),
+                    Text(default_font, "Return", "return"))
 
 db.get_random_weapon()
 
-menu = True
 while True:
     display.fill((0, 0, 0))
 
-    if menu:
+    if mainMenu.visibility:
         mainMenu.render()
+
+    if settingsMenu.visibility:
+        settingsMenu.render()
 
     for event in pygame.event.get():
 
@@ -138,14 +159,20 @@ while True:
             sys.exit()
         elif event.type == pygame.KEYDOWN:
             if pressed[pygame.K_TAB] or pressed[pygame.K_DOWN]:
-                if menu:
+                if mainMenu.visibility:
                     mainMenu.cycle("down")
+                elif settingsMenu.visibility:
+                    settingsMenu.cycle("down")
             elif pressed[pygame.K_UP]:
-                if menu:
+                if mainMenu.visibility:
                     mainMenu.cycle("up")
-            elif pressed[pygame.K_SPACE]:
-                if menu:
+                elif settingsMenu.visibility:
+                    settingsMenu.cycle("up")
+            elif pressed[pygame.K_SPACE] or pressed[pygame.K_RETURN]:
+                if mainMenu.visibility:
                     mainMenu.list_menu_items[mainMenu.current_round].do_action()
+                elif settingsMenu.visibility:
+                    settingsMenu.list_menu_items[settingsMenu.current_round].do_action()
 
     vertical = -100
 

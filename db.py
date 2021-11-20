@@ -44,6 +44,19 @@ def get_random_weapon():
     weapons = c.fetchall()
     weapon = random.choice(weapons)
 
-    final = ''.join(prefix) + " " + ''.join(weapon)
+    final = f'{"".join(prefix).capitalize()}  {"".join(weapon).capitalize()}'
+
+    if round(random.random()):
+        if round(random.random()):
+            c.execute("SELECT name FROM adjectives WHERE grammar = 2")
+            postfixes = c.fetchall()
+            postfix = random.choice(postfixes)
+            final = f'{final} of {"".join(postfix).capitalize()}'
+
+        else:
+            c.execute("SELECT name FROM mobs")
+            mobs = c.fetchall()
+            mob = random.choice(mobs)
+            final = f'{final} of the {"".join(mob).capitalize()}'
 
     print(final)
