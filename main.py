@@ -51,44 +51,8 @@ class Text:
             mainMenu.visibility = False
             settingsMenu.visibility = True
         elif self.functionality == "return":
-            mainMenu.visibility = True
             settingsMenu.visibility = False
-
-
-# Items and weapons
-@dataclass
-class Item:
-    def __init__(self, name):
-        self.name = name
-        self.coin_value = None
-
-
-@dataclass
-class Weapon(Item):
-    def __init__(self, name, speed):
-        super().__init__(name)
-        self.speed = speed
-        self.damage = 10
-
-
-@dataclass
-class Bow(Weapon):
-    def __init__(self, name, speed):
-        super().__init__(name, speed)
-        self.range = 50
-
-
-@dataclass
-class Sword(Weapon):
-    def __init__(self, name, speed):
-        super().__init__(name, speed)
-        self.range = 10
-
-
-# Player
-class Player:
-    def __init__(self):
-        self.items = []
+            mainMenu.visibility = True
 
 
 class Menu:
@@ -141,6 +105,50 @@ settingsMenu = Menu(False, -90, 60,
                     Text(default_font, "Colors"),
                     Text(default_font, "Return", "return"))
 
+
+# Items and weapons
+@dataclass
+class Item:
+    def __init__(self, name):
+        self.name = name
+        self.coin_value = None
+
+
+@dataclass
+class Weapon(Item):
+    def __init__(self, name, speed):
+        super().__init__(name)
+        self.speed = speed
+        self.damage = 10
+
+
+@dataclass
+class RangedWeapon(Weapon):
+    def __init__(self, name, speed):
+        super().__init__(name, speed)
+        self.range = 50
+
+
+@dataclass
+class MeleeWeapon(Weapon):
+    def __init__(self, name, speed):
+        super().__init__(name, speed)
+        self.range = 10
+
+
+@dataclass
+class MagicWeapon(Weapon):
+    def __init__(self, name, speed):
+        super().__init__(name, speed)
+        self.range = 20
+
+
+# Player
+class Player:
+    def __init__(self):
+        self.items = []
+
+
 db.get_random_weapon()
 
 while True:
@@ -153,26 +161,20 @@ while True:
         settingsMenu.render()
 
     for event in pygame.event.get():
-
         pressed = pygame.key.get_pressed()
         if event.type == pygame.QUIT:
             sys.exit()
         elif event.type == pygame.KEYDOWN:
-            if pressed[pygame.K_TAB] or pressed[pygame.K_DOWN]:
-                if mainMenu.visibility:
-                    mainMenu.cycle("down")
-                elif settingsMenu.visibility:
-                    settingsMenu.cycle("down")
-            elif pressed[pygame.K_UP]:
-                if mainMenu.visibility:
-                    mainMenu.cycle("up")
-                elif settingsMenu.visibility:
-                    settingsMenu.cycle("up")
-            elif pressed[pygame.K_SPACE] or pressed[pygame.K_RETURN]:
-                if mainMenu.visibility:
-                    mainMenu.list_menu_items[mainMenu.current_round].do_action()
-                elif settingsMenu.visibility:
-                    settingsMenu.list_menu_items[settingsMenu.current_round].do_action()
+
+            # Main and settings menu functionalities
+            if mainMenu.visibility or settingsMenu.visibility:
+                if pressed[pygame.K_TAB] or pressed[pygame.K_DOWN]:
+                    mainMenu.cycle("down") if mainMenu.visibility else settingsMenu.cycle("down")
+                elif pressed[pygame.K_UP]:
+                    mainMenu.cycle("up") if mainMenu.visibility else settingsMenu.cycle("up")
+                elif pressed[pygame.K_SPACE] or pressed[pygame.K_RETURN]:
+                    mainMenu.list_menu_items[mainMenu.current_round].do_action() if mainMenu.visibility \
+                        else settingsMenu.list_menu_items[settingsMenu.current_round].do_action()
 
     vertical = -100
 
