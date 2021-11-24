@@ -15,7 +15,7 @@ def initialize_db():
 def get_all_user_items():
     con = sl.connect('data.db')
     c = con.cursor()
-    c.execute("SELECT * FROM user_items")
+    c.execute("SELECT * FROM user_item")
     rows = c.fetchall()
     for row in rows:
         print(row)
@@ -37,7 +37,7 @@ def get_items_by_user_name(user_name):
 def get_all_user_item_names():
     con = sl.connect('data.db')
     c = con.cursor()
-    c.execute("SELECT name FROM user_items")
+    c.execute("SELECT name FROM user_item")
     names = c.fetchall()
     for name in names:
         print(name)
@@ -48,27 +48,27 @@ def get_random_weapon():
     con = sl.connect('data.db')
     c = con.cursor()
 
-    c.execute("SELECT name FROM adjectives WHERE grammar = 1")
+    c.execute("SELECT name FROM adjective WHERE grammar = 1")
     prefixes = c.fetchall()
     prefix = random.choice(prefixes)
 
-    c.execute("SELECT name FROM weapons")
+    c.execute("SELECT name FROM weapon")
     weapons = c.fetchall()
     weapon = random.choice(weapons)
 
-    final = f'{"".join(prefix).capitalize()}  {"".join(weapon).capitalize()}'
+    final = f'{"".join(prefix).capitalize()} {"".join(weapon).capitalize()}'
 
     if round(random.random()):
         if round(random.random()):
-            c.execute("SELECT name FROM adjectives WHERE grammar = 2")
+            c.execute("SELECT name FROM adjective WHERE grammar = 2")
             postfixes = c.fetchall()
             postfix = random.choice(postfixes)
             final = f'{final} of {"".join(postfix).capitalize()}'
 
         else:
-            c.execute("SELECT name FROM mobs")
+            c.execute("SELECT name FROM mob")
             mobs = c.fetchall()
             mob = random.choice(mobs)
             final = f'{final} of the {"".join(mob).capitalize()}'
 
-    print(final)
+    return final

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import pygame
 import sys
 import db
+import time
 
 pygame.init()
 pygame.font.init()
@@ -14,15 +15,17 @@ display = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
 clock = pygame.time.Clock()
 
 # Fonts
-default_font = "./assets/fonts/DeutscheZierschrift.ttf"
+menu_font = "./assets/fonts/DeutscheZierschrift.ttf"
+default_font = "./assets/fonts/Augusta.ttf"
 
 
 class Text:
-    def __init__(self, font, text="", action=None):
+    def __init__(self, font, text="", action=None, visibility=True):
         self.font = font
         self.text = text
         self.functionality = action
         self.color = (255, 255, 255)
+        self.visibility = visibility
 
     def change_font(self, font):
         self.font = font
@@ -42,11 +45,13 @@ class Text:
     def get_w(self):
         return pygame.font.SysFont(self.font, 120).render(self.text, True, (255, 255, 255)).get_width()
 
+    # Tekst functionaliteit
     def do_action(self):
         if self.functionality == "exit_main":
             sys.exit()
         elif self.functionality == "enter_main":
             mainMenu.visibility = False
+            default_text_box.visibility = True
         elif self.functionality == "settings_main":
             mainMenu.visibility = False
             settingsMenu.visibility = True
@@ -93,17 +98,17 @@ class Menu:
 
 
 mainMenu = Menu(True, -90, 60,
-                Text(default_font, "Larpland"),
-                Text(default_font, "Enter", "enter_main"),
-                Text(default_font, "Settings", "settings_main"),
-                Text(default_font, "Exit", "exit_main"))
+                Text(menu_font, "Larpland"),
+                Text(menu_font, "Enter", "enter_main"),
+                Text(menu_font, "Settings", "settings_main"),
+                Text(menu_font, "Exit", "exit_main"))
 
 settingsMenu = Menu(False, -90, 60,
-                    Text(default_font, "Settings"),
-                    Text(default_font, "Menu style"),
-                    Text(default_font, "Other"),
-                    Text(default_font, "Colors"),
-                    Text(default_font, "Return", "return"))
+                    Text(menu_font, "Settings"),
+                    Text(menu_font, "Menu style"),
+                    Text(menu_font, "Other"),
+                    Text(menu_font, "Colors"),
+                    Text(menu_font, "Return", "return"))
 
 
 # Items and weapons
@@ -149,16 +154,30 @@ class Player:
         self.items = []
 
 
-db.get_random_weapon()
+default_text_box = Text(default_font, visibility=False)
+weapon = db.get_random_weapon()
 
+time_delay = 3000
+timer_event = pygame.USEREVENT + 1
+pygame.time.set_timer(timer_event, time_delay)
+
+text_array = ['You wake up cold in the snow . . .', 'What is your name?']
+
+i = 0
+run = False
 while True:
     display.fill((0, 0, 0))
 
     if mainMenu.visibility:
         mainMenu.render()
-
     if settingsMenu.visibility:
         settingsMenu.render()
+    if default_text_box.visibility:
+        mainMenu.visibility = False
+        run = True
+
+    if run:
+        default_text_box.render()
 
     for event in pygame.event.get():
         pressed = pygame.key.get_pressed()
@@ -174,8 +193,10 @@ while True:
                 elif pressed[pygame.K_SPACE] or pressed[pygame.K_RETURN]:
                     mainMenu.list_menu_items[mainMenu.current_round].do_action() if mainMenu.visibility \
                         else settingsMenu.list_menu_items[settingsMenu.current_round].do_action()
-
-    vertical = -100
-
+        if run:
+            if event.type == timer_event:
+                default_text_box.text = text_array[i]
+                if i < (len(text_array) - 1):
+                    i += 1
     clock.tick(60)
     pygame.display.update()
