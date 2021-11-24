@@ -155,6 +155,8 @@ class Player:
 
 
 default_text_box = Text(default_font, visibility=False)
+input_field_box = Text(default_font, visibility=False, text="")
+
 weapon = db.get_random_weapon()
 
 time_delay = 3000
@@ -164,6 +166,7 @@ pygame.time.set_timer(timer_event, time_delay)
 text_array = ['You wake up cold in the snow . . .', 'What is your name?']
 
 i = 0
+
 run = False
 while True:
     display.fill((0, 0, 0))
@@ -175,6 +178,8 @@ while True:
     if default_text_box.visibility:
         mainMenu.visibility = False
         run = True
+    if input_field_box.visibility:
+        input_field_box.render(v_offset=200)
 
     if run:
         default_text_box.render()
@@ -193,10 +198,22 @@ while True:
                 elif pressed[pygame.K_SPACE] or pressed[pygame.K_RETURN]:
                     mainMenu.list_menu_items[mainMenu.current_round].do_action() if mainMenu.visibility \
                         else settingsMenu.list_menu_items[settingsMenu.current_round].do_action()
+            if input_field_box.visibility:
+                if event.key in (pygame.K_a, pygame.K_b, pygame.K_c, pygame.K_d, pygame.K_e, pygame.K_f, pygame.K_g,
+                                 pygame.K_h, pygame.K_i, pygame.K_j, pygame.K_k, pygame.K_l, pygame.K_m, pygame.K_n,
+                                 pygame.K_o, pygame.K_p, pygame.K_q, pygame.K_r, pygame.K_s, pygame.K_t, pygame.K_u,
+                                 pygame.K_v, pygame.K_w, pygame.K_x, pygame.K_y, pygame.K_z, pygame.K_SPACE):
+                    input_field_box.text += event.unicode
+                if event.key == pygame.K_BACKSPACE:
+                    input_field_box.text = input_field_box.text[:-1]
+
         if run:
             if event.type == timer_event:
-                default_text_box.text = text_array[i]
-                if i < (len(text_array) - 1):
-                    i += 1
+                if i < (len(text_array)):
+                    default_text_box.text = text_array[i]
+                if i == 2:
+                    input_field_box.visibility = True
+                i += 1
+
     clock.tick(60)
     pygame.display.update()
