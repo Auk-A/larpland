@@ -165,7 +165,6 @@ while True:
         if event.type == pygame.QUIT:
             sys.exit()
         elif event.type == pygame.KEYDOWN:
-
             # Main and settings menu functionalities
             if mainMenu.visibility or settingsMenu.visibility:
                 if pressed[pygame.K_TAB] or pressed[pygame.K_DOWN]:

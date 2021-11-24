@@ -22,6 +22,18 @@ def get_all_user_items():
     con.close()
 
 
+def get_items_by_user_name(user_name):
+    con = sl.connect('data.db')
+    c = con.cursor()
+
+    query = "select item.name, coin_value, speed, damage, range, item_type from user_item " \
+            "JOIN user ON user.id=user_item.user_id " \
+            "JOIN item ON item.id=user_item.item_id " \
+            "WHERE user.name=?"
+    param = user_name
+    c.execute(query, param)
+
+
 def get_all_user_item_names():
     con = sl.connect('data.db')
     c = con.cursor()
