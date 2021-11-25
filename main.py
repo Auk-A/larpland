@@ -2,11 +2,15 @@ from dataclasses import dataclass
 
 import pygame
 import sys
+
+from pygame import key
+
 import db
 import time
 
 pygame.init()
 pygame.font.init()
+pygame.key.set_repeat(190)
 db.initialize_db()
 
 w = 1920
@@ -26,6 +30,7 @@ class Text:
         self.functionality = action
         self.color = (255, 255, 255)
         self.visibility = visibility
+        self.text_surface = None
 
     def change_font(self, font):
         self.font = font
@@ -34,13 +39,13 @@ class Text:
         self.text = new_text
 
     def render(self, location=None, h_offset=0, v_offset=0, size=50):
-        text_surface = pygame.font.Font(self.font, size).render(self.text, True, self.color)
-        text_rect = text_surface.get_rect(center=((w / 2) + h_offset, (h / 2) + v_offset))
+        self.text_surface = pygame.font.Font(self.font, size).render(self.text, True, self.color)
+        text_rect = self.text_surface.get_rect(center=((w / 2) + h_offset, (h / 2) + v_offset))
 
         if location is None:
-            display.blit(text_surface, dest=text_rect)
+            display.blit(self.text_surface, dest=text_rect)
         else:
-            display.blit(text_surface, dest=location)
+            display.blit(self.text_surface, dest=location)
 
     def get_w(self):
         return pygame.font.SysFont(self.font, 120).render(self.text, True, (255, 255, 255)).get_width()
@@ -58,6 +63,31 @@ class Text:
         elif self.functionality == "return":
             settingsMenu.visibility = False
             mainMenu.visibility = True
+
+
+class InputField(Text):
+    def __init__(self, font, text="", action=None, visibility=True, prefix="", text_when_empty=""):
+        super().__init__(font, text, action, visibility)
+        self.prefix = prefix
+        self.text_when_empty = text_when_empty
+
+    def render(self, location=None, h_offset=0, v_offset=0, size=50):
+        if self.text_when_empty:
+            if self.text == "":
+                self.text_surface = pygame.font.Font(self.font, size).render(f"{self.prefix} {self.text_when_empty}",
+                                                                             True, self.color)
+            if self.text != "":
+                self.text_surface = pygame.font.Font(self.font, size).render(f"{self.prefix} {self.text}",
+                                                                             True, self.color)
+        else:
+            self.text_surface = pygame.font.Font(self.font, size).render(f"{self.prefix} {self.text}", True, self.color)
+
+        text_rect = self.text_surface.get_rect(center=((w / 2) + h_offset, (h / 2) + v_offset))
+
+        if location is None:
+            display.blit(self.text_surface, dest=text_rect)
+        else:
+            display.blit(self.text_surface, dest=location)
 
 
 class Menu:
@@ -150,23 +180,26 @@ class MagicWeapon(Weapon):
 
 # Player
 class Player:
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.items = []
 
 
 default_text_box = Text(default_font, visibility=False)
-input_field_box = Text(default_font, visibility=False, text="")
+input_field_box = InputField(default_font, visibility=False, text="", prefix="", text_when_empty="_")
+input_field_box.color = (255, 0, 0)
 
 weapon = db.get_random_weapon()
 
-time_delay = 3000
+time_delay = 4000
 timer_event = pygame.USEREVENT + 1
+
 pygame.time.set_timer(timer_event, time_delay)
 
-text_array = ['You wake up cold in the snow . . .', 'What is your name?']
+intro_screen_text = ['You wake up cold in the snow . . .', 'What is your name?']
 
 i = 0
-
+toggle = 0
 run = False
 while True:
     display.fill((0, 0, 0))
@@ -178,14 +211,22 @@ while True:
     if default_text_box.visibility:
         mainMenu.visibility = False
         run = True
+        default_text_box.render()
+
     if input_field_box.visibility:
         input_field_box.render(v_offset=200)
 
-    if run:
-        default_text_box.render()
+    if input_field_box.text_when_empty != "":
+        if (round(pygame.time.get_ticks() / 500) % 2) == 0:
+            input_field_box.text_when_empty = "_"
+        else:
+            input_field_box.text_when_empty = " "
+
+    if input_field_box.text == " ":
+        input_field_box.text = ""
 
     for event in pygame.event.get():
-        pressed = pygame.key.get_pressed()
+        pressed = key.get_pressed()
         if event.type == pygame.QUIT:
             sys.exit()
         elif event.type == pygame.KEYDOWN:
@@ -198,6 +239,8 @@ while True:
                 elif pressed[pygame.K_SPACE] or pressed[pygame.K_RETURN]:
                     mainMenu.list_menu_items[mainMenu.current_round].do_action() if mainMenu.visibility \
                         else settingsMenu.list_menu_items[settingsMenu.current_round].do_action()
+
+            # Key binds voor input fields
             if input_field_box.visibility:
                 if event.key in (pygame.K_a, pygame.K_b, pygame.K_c, pygame.K_d, pygame.K_e, pygame.K_f, pygame.K_g,
                                  pygame.K_h, pygame.K_i, pygame.K_j, pygame.K_k, pygame.K_l, pygame.K_m, pygame.K_n,
@@ -206,12 +249,23 @@ while True:
                     input_field_box.text += event.unicode
                 if event.key == pygame.K_BACKSPACE:
                     input_field_box.text = input_field_box.text[:-1]
+                if event.key == pygame.K_RETURN:
+                    if len(input_field_box.text) == 0:
+                        default_text_box.text = "Surely your name isn't an empty string..."
+                    elif len(input_field_box.text) < 3:
+                        default_text_box.text = "Surely your name isn't that short..."
+                    elif len(input_field_box.text) >= 3:
+                        current_player = Player(input_field_box.text)
+                        input_field_box.visibility = False
+                        default_text_box.visibility = False
+                        print("player created")
+                        input_field_box.text = current_player.name
 
         if run:
             if event.type == timer_event:
-                if i < (len(text_array)):
-                    default_text_box.text = text_array[i]
-                if i == 2:
+                if i < (len(intro_screen_text)):
+                    default_text_box.text = intro_screen_text[i]
+                if i == 1:
                     input_field_box.visibility = True
                 i += 1
 
