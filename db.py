@@ -2,14 +2,49 @@ import random
 import sqlite3 as sl
 
 
-def initialize_db():
+def check_player(name):
     con = sl.connect('data.db')
     c = con.cursor()
-
-    # values = ("Houten Zwaard", 3, 10)
-    # c.execute("INSERT INTO weapons VALUES(null,?,?,?)", values)
+    c.execute("SELECT user.name FROM user WHERE user.name=?", [name])
+    found = c.fetchone()
     con.commit()
     con.close()
+    return bool(found)
+
+
+# Kolommen kunnen wijzigen dus er wordt niet geïtereerd
+def get_player(user_name):
+    con = sl.connect('data.db')
+    c = con.cursor()
+    c.execute("SELECT user.name FROM user WHERE user.name=?", [user_name])
+    found_name = c.fetchone()
+    c.execute("SELECT user.level FROM user WHERE user.name=?", [user_name])
+    found_level = c.fetchone()
+    c.execute("SELECT user.health FROM user WHERE user.name=?", [user_name])
+    found_health = c.fetchone()
+    c.execute("SELECT user.coins FROM user WHERE user.name=?", [user_name])
+    found_coins = c.fetchone()
+
+    con.commit()
+    con.close()
+
+    player = {
+        'name': found_name[0],
+        'level': found_level[0],
+        'health': found_health[0],
+        'coins': found_coins[0]
+    }
+
+    return player
+
+
+def create_player(user_name):
+    con = sl.connect('data.db')
+    c = con.cursor()
+    c.execute("INSERT INTO user (name) VALUES(?)", [user_name])
+    con.commit()
+    con.close()
+    print(f"Player {user_name} created")
 
 
 def get_all_user_items():
@@ -30,14 +65,16 @@ def get_items_by_user_name(user_name):
             "JOIN user ON user.id=user_item.user_id " \
             "JOIN item ON item.id=user_item.item_id " \
             "WHERE user.name=?"
-    param = user_name
-    c.execute(query, param)
+    c.execute(query, [user_name])
+    items = c.fetchall()
+    for item in items:
+        print(item)
 
 
 def get_all_user_item_names():
     con = sl.connect('data.db')
     c = con.cursor()
-    c.execute("SELECT name FROM user_item")
+    c.execute("SELECT user_item.name FROM user_item")
     names = c.fetchall()
     for name in names:
         print(name)
@@ -48,11 +85,11 @@ def get_random_weapon():
     con = sl.connect('data.db')
     c = con.cursor()
 
-    c.execute("SELECT name FROM adjective WHERE grammar = 1")
+    c.execute("SELECT adjective.name FROM adjective WHERE grammar = 1")
     prefixes = c.fetchall()
     prefix = random.choice(prefixes)
 
-    c.execute("SELECT name FROM weapon")
+    c.execute("SELECT weapon.name FROM weapon")
     weapons = c.fetchall()
     weapon = random.choice(weapons)
 

@@ -1,17 +1,13 @@
-from dataclasses import dataclass
-
 import pygame
 import sys
+import db
+import world
 
 from pygame import key
-
-import db
-import time
 
 pygame.init()
 pygame.font.init()
 pygame.key.set_repeat(190)
-db.initialize_db()
 
 w = 1920
 h = 1080
@@ -89,6 +85,21 @@ class InputField(Text):
         else:
             display.blit(self.text_surface, dest=location)
 
+    def add_key(self):
+        if event.key in (pygame.K_a, pygame.K_b, pygame.K_c, pygame.K_d, pygame.K_e, pygame.K_f, pygame.K_g,
+                         pygame.K_h, pygame.K_i, pygame.K_j, pygame.K_k, pygame.K_l, pygame.K_m, pygame.K_n,
+                         pygame.K_o, pygame.K_p, pygame.K_q, pygame.K_r, pygame.K_s, pygame.K_t, pygame.K_u,
+                         pygame.K_v, pygame.K_w, pygame.K_x, pygame.K_y, pygame.K_z, pygame.K_SPACE):
+            # Eerste letter een hoofdletter
+            if self.text == "":
+                self.text += event.unicode.upper()
+            else:
+                self.text += event.unicode
+
+    def remove_key(self):
+        if event.key == pygame.K_BACKSPACE:
+            self.text = self.text[:-1]
+
 
 class Menu:
     def __init__(self, visibility, vertical_offset, font_size, text_header, *menu_items):
@@ -141,53 +152,25 @@ settingsMenu = Menu(False, -90, 60,
                     Text(menu_font, "Return", "return"))
 
 
-# Items and weapons
-@dataclass
-class Item:
-    def __init__(self, name):
-        self.name = name
-        self.coin_value = None
-
-
-@dataclass
-class Weapon(Item):
-    def __init__(self, name, speed):
-        super().__init__(name)
-        self.speed = speed
-        self.damage = 10
-
-
-@dataclass
-class RangedWeapon(Weapon):
-    def __init__(self, name, speed):
-        super().__init__(name, speed)
-        self.range = 50
-
-
-@dataclass
-class MeleeWeapon(Weapon):
-    def __init__(self, name, speed):
-        super().__init__(name, speed)
-        self.range = 10
-
-
-@dataclass
-class MagicWeapon(Weapon):
-    def __init__(self, name, speed):
-        super().__init__(name, speed)
-        self.range = 20
-
-
 # Player
 class Player:
-    def __init__(self, name):
-        self.name = name
-        self.items = []
+    def __init__(self):
+        self.name = None
+        self.level = None
+        self.health = None
+        self.coins = None
+        self.visibility = False
+
+    def __str__(self):
+        return f"name: {self.name}\n" \
+               f"level: {self.level}\n" \
+               f"health: {self.health}\n" \
+               f"coins: {self.coins}"
 
 
 default_text_box = Text(default_font, visibility=False)
-input_field_box = InputField(default_font, visibility=False, text="", prefix="", text_when_empty="_")
-input_field_box.color = (255, 0, 0)
+name_input_field = InputField(default_font, visibility=False, text="", prefix="", text_when_empty="_")
+name_input_field.color = (255, 0, 0)
 
 weapon = db.get_random_weapon()
 
@@ -201,6 +184,7 @@ intro_screen_text = ['You wake up cold in the snow . . .', 'What is your name?']
 i = 0
 toggle = 0
 run = False
+current_player = Player()
 while True:
     display.fill((0, 0, 0))
 
@@ -213,24 +197,25 @@ while True:
         run = True
         default_text_box.render()
 
-    if input_field_box.visibility:
-        input_field_box.render(v_offset=200)
+    if name_input_field.visibility:
+        name_input_field.render(v_offset=200)
 
-    if input_field_box.text_when_empty != "":
+    if name_input_field.text_when_empty != "":
         if (round(pygame.time.get_ticks() / 500) % 2) == 0:
-            input_field_box.text_when_empty = "_"
+            name_input_field.text_when_empty = "_"
         else:
-            input_field_box.text_when_empty = " "
+            name_input_field.text_when_empty = " "
 
-    if input_field_box.text == " ":
-        input_field_box.text = ""
+    if name_input_field.text == " ":
+        name_input_field.text = ""
 
     for event in pygame.event.get():
         pressed = key.get_pressed()
         if event.type == pygame.QUIT:
             sys.exit()
         elif event.type == pygame.KEYDOWN:
-            # Main and settings menu functionalities
+
+            # Main en settings menu functionaliteit
             if mainMenu.visibility or settingsMenu.visibility:
                 if pressed[pygame.K_TAB] or pressed[pygame.K_DOWN]:
                     mainMenu.cycle("down") if mainMenu.visibility else settingsMenu.cycle("down")
@@ -240,34 +225,42 @@ while True:
                     mainMenu.list_menu_items[mainMenu.current_round].do_action() if mainMenu.visibility \
                         else settingsMenu.list_menu_items[settingsMenu.current_round].do_action()
 
-            # Key binds voor input fields
-            if input_field_box.visibility:
-                if event.key in (pygame.K_a, pygame.K_b, pygame.K_c, pygame.K_d, pygame.K_e, pygame.K_f, pygame.K_g,
-                                 pygame.K_h, pygame.K_i, pygame.K_j, pygame.K_k, pygame.K_l, pygame.K_m, pygame.K_n,
-                                 pygame.K_o, pygame.K_p, pygame.K_q, pygame.K_r, pygame.K_s, pygame.K_t, pygame.K_u,
-                                 pygame.K_v, pygame.K_w, pygame.K_x, pygame.K_y, pygame.K_z, pygame.K_SPACE):
-                    input_field_box.text += event.unicode
-                if event.key == pygame.K_BACKSPACE:
-                    input_field_box.text = input_field_box.text[:-1]
+            # Key binds voor input field
+            if name_input_field.visibility:
+                name_input_field.add_key()
+                name_input_field.remove_key()
                 if event.key == pygame.K_RETURN:
-                    if len(input_field_box.text) == 0:
+                    if len(name_input_field.text) == 0:
                         default_text_box.text = "Surely your name isn't an empty string..."
-                    elif len(input_field_box.text) < 3:
+                    elif len(name_input_field.text) < 3:
                         default_text_box.text = "Surely your name isn't that short..."
-                    elif len(input_field_box.text) >= 3:
-                        current_player = Player(input_field_box.text)
-                        input_field_box.visibility = False
-                        default_text_box.visibility = False
-                        print("player created")
-                        input_field_box.text = current_player.name
+                    elif len(name_input_field.text) >= 3:
+                        if db.check_player(name_input_field.text):
+                            current_player.name = name_input_field.text
+                            default_text_box.text = f"Welcome back, {name_input_field.text}"
+                        else:
+                            current_player.name = name_input_field.text
+                            db.create_player(current_player.name)
+                            name_input_field.visibility = False
+                            default_text_box.visibility = False
+                            print("player created")
+                        player_info = db.get_player(current_player.name)
+                        current_player.name = player_info.get("name")
+                        current_player.level = player_info.get("level")
+                        current_player.health = player_info.get("health")
+                        current_player.coins = player_info.get("coins")
+                        print(current_player)
 
         if run:
             if event.type == timer_event:
                 if i < (len(intro_screen_text)):
                     default_text_box.text = intro_screen_text[i]
                 if i == 1:
-                    input_field_box.visibility = True
+                    name_input_field.visibility = True
                 i += 1
+
+                if current_player.visibility:
+                    pass
 
     clock.tick(60)
     pygame.display.update()
